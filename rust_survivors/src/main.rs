@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use Vec3;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 //scene const variables
@@ -25,14 +26,15 @@ App::new()
     .register_type::<Lifetime>()
 
     //startup systems
-    //.add_systems(Startup, asset_loading)
+    .add_systems(Startup, asset_loading)
     .add_systems(Startup, spawn_camera)
     .add_systems(Startup, spawn_basic_scene)
 
     //FixedUpdate systems
+    .add_systems(FixedUpdate, player_movement)
     .add_systems(FixedUpdate, sprite_movement)
-    //.add_systems(FixedUpdate, enemy_shooting)
-    //.add_systems(FixedUpdate, bullet_despawn)
+    .add_systems(FixedUpdate, enemy_shooting)
+    .add_systems(FixedUpdate, bullet_despawn)
  
     .run();
 }
@@ -70,11 +72,13 @@ fn spawn_basic_scene(
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("poe_0.png"),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(0.5, 0.5, 0.5)),
             ..default()
         },
-        Player,
-        Name::new("Player 1"),
+        Player {
+            move_speed: 100.0,
+        },
+        Name::new("Poe Ratcho"),
     ));
 }
 
@@ -111,6 +115,28 @@ fn sprite_movement(
     }
 }
 
+
+fn player_movement(
+    time: Res<Time>,
+    keys: Res<Input<KeyCode>>,
+    mut player_position: Query<(&Player, &mut Transform)>
+) {
+    for(player, mut transform) in  &mut player_position {
+
+        if keys.pressed(KeyCode::W) {
+            transform.translation.y += player.move_speed * time.delta_seconds();
+        }
+        if keys.pressed(KeyCode::S) {
+            transform.translation.y -= player.move_speed * time.delta_seconds()
+        }
+        if keys.pressed(KeyCode::D) {
+            transform.translation.x += player.move_speed * time.delta_seconds()
+        }
+        if keys.pressed(KeyCode::A) {
+            transform.translation.x -= player.move_speed * time.delta_seconds()
+        } 
+    }
+}
 
 
 fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
@@ -189,7 +215,9 @@ pub struct Enemy {
 }
 
 #[derive(Component)]
-pub struct Player;
+pub struct Player {
+    move_speed: f32,
+}
 
 #[derive(Reflect, Component, Default)]
 #[reflect(Component)]
