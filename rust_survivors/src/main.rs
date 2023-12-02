@@ -2,9 +2,6 @@ use bevy::prelude::*;
 use Vec3;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-//scene const variables
-pub const HEIGHT: f32 = 720.0;
-pub const WIDTH: f32 = 1280.0;
 
 fn main() {
 App::new()
@@ -12,7 +9,7 @@ App::new()
     .insert_resource(ClearColor(Color::rgb(0.2,0.2,0.2)))
     .add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            resolution: (WIDTH, HEIGHT).into(),
+            resolution: (1280.0, 720.0).into(),
             title: "Rust Survivors".to_string(),
             resizable: false,
             ..default()
@@ -20,32 +17,43 @@ App::new()
         ..default()
     }))
 
+    //add game states
+    .add_state::<AppState>()
+
     //inspector setup
     .add_plugins(WorldInspectorPlugin::new())
-    .register_type::<Enemy>()
-    .register_type::<Lifetime>()
 
     //startup systems
-    .add_systems(Startup, asset_loading)
-    .add_systems(Startup, spawn_camera)
     .add_systems(Startup, spawn_basic_scene)
+
+   // .add_systems(FixedUpdate, main_menu_controls)
 
     //FixedUpdate systems
     .add_systems(FixedUpdate, player_movement)
-    .add_systems(FixedUpdate, sprite_movement)
-    .add_systems(FixedUpdate, enemy_shooting)
-    .add_systems(FixedUpdate, bullet_despawn)
+    .add_systems(FixedUpdate, enemy_movement)
  
     .run();
 }
 
 
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn(
-        Camera2dBundle::default())
-        .insert(Camera);
 
+fn main_menu_controls(
+    mut keys: ResMut<Input<KeyCode>>,
+    mut app_state: State<AppState>
+) {
+    if app_state.eq(&AppState::MainMenu) {
+        if keys.just_pressed(KeyCode::Return) {
+            NextState(Some(AppState::InGame));
+        }
+    } else {
+        if keys.just_pressed(KeyCode::Escape) {
+            NextState(Some(AppState::MainMenu));
+            keys.reset(KeyCode::Escape);
+        }
+    }
 }
+
+
 
 fn spawn_basic_scene(
     mut commands: Commands,
@@ -55,62 +63,67 @@ fn spawn_basic_scene(
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("slime.png"),
-            transform: Transform::from_xyz(100.0, 0.0, 0.0),
+            transform:  Transform {
+                            translation: Vec3::new(100.0, 0.0, 0.0),
+                            scale: Vec3::new(0.1, 0.1, 0.1),
+                            ..default()
+                        },
             ..default()
         },
-        Direction2D {
-            vertical: Direction::Up,
-            horizontal: Direction::Left
-        },
-        Enemy {
-            shooting_timer: Timer::from_seconds(1.0, TimerMode::Repeating),
-        },
+        Enemy,
         Name::new("Slime"),
     ));
 
     //spawn player
-    commands.spawn((
+    let player = commands.spawn((
         SpriteBundle {
             texture: asset_server.load("poe_0.png"),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(0.5, 0.5, 0.5)),
+            transform:  Transform {
+                            translation: Vec3::new(0.0, 0.0, 0.0),
+                            scale: Vec3::new(0.25, 0.25, 0.25),
+                            ..default()
+                        },
             ..default()
         },
         Player {
             move_speed: 100.0,
         },
         Name::new("Poe Ratcho"),
-    ));
+    )).id();
+
+    //spawn camera
+    let camera_child = commands.spawn((
+        Camera2dBundle::default(),
+        Camera,
+    )).id();
+
+    //link player and camera so camera always follows player
+    commands.entity(player).push_children(&[camera_child]);
 }
 
-fn sprite_movement(
+
+fn enemy_movement(
     time: Res<Time>,
-    mut sprite_position: Query<(&mut Direction2D, &mut Transform)>
+    mut enemy_positions: Query<(&mut Transform, With<Enemy>, Without<Player>)>,
+    player_position: Query<(&Transform, With<Player>)>
 ) {
-    for(mut direction_bundle, mut transform) in  &mut sprite_position {
-        match direction_bundle.vertical {
-            Direction::Up           => transform.translation.y += 150.0 * time.delta_seconds(),
-            Direction::Down         => transform.translation.y -= 150.0 * time.delta_seconds(),
-            Direction::Nonmoving    => transform.translation.y = 0.0,
-            _                       => panic!("you cant have a horizontal direction in the vertical"),
+    let (player_transform, player) = player_position.single();
+
+    for(mut enemy_transform, _, _) in  &mut enemy_positions {
+        //update enemy translation x
+        if player_transform.translation.x < enemy_transform.translation.x {
+            enemy_transform.translation.x -= 10.0 * time.delta_seconds();
+        }
+        if player_transform.translation.x > enemy_transform.translation.x {
+            enemy_transform.translation.x += 10.0 * time.delta_seconds();
         }
 
-        match direction_bundle.horizontal {
-            Direction::Right        => transform.translation.x += 150.0 * time.delta_seconds(),
-            Direction::Left         => transform.translation.x -= 150.0 * time.delta_seconds(),
-            Direction::Nonmoving    => transform.translation.x = 0.0,
-            _                      => panic!("you cant have a vertical direction in the horizontal"),
+        //update enemy translation y
+        if player_transform.translation.y < enemy_transform.translation.y {
+            enemy_transform.translation.y -= 10.0 * time.delta_seconds();
         }
-
-        if transform.translation.y > 200.0 {
-            direction_bundle.vertical = Direction::Down;
-        } else if transform.translation.y < -200.0 {
-            direction_bundle.vertical = Direction::Up;
-        }
-
-        if transform.translation.x > 200.0 {
-            direction_bundle.horizontal = Direction::Left;
-        } else if transform.translation.x < -200.0 {
-            direction_bundle.horizontal = Direction::Right;
+        if player_transform.translation.y > enemy_transform.translation.y {
+            enemy_transform.translation.y += 10.0 * time.delta_seconds();
         }
     }
 }
@@ -139,11 +152,46 @@ fn player_movement(
 }
 
 
+
+#[derive(Component)]
+pub struct Enemy;
+
+#[derive(Component)]
+pub struct Player {
+    move_speed: f32,
+}
+
+#[derive(Component)]
+pub struct Camera;
+
+#[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
+pub enum AppState {
+    #[default] MainMenu,
+    PauseMenu,
+    InGame,
+}
+
+
+
+
+/*
+    BULLET SHOOTING CODE --> MAYBE REFACTOR INTO SOMETHING USABLE BUT IDK
+
+
+
+
+#[derive(Resource)]
+pub struct GameAssets {
+    bullet_scene: Handle<Scene>,
+}
+
+
 fn asset_loading(mut commands: Commands, assets: Res<AssetServer>) {
     commands.insert_resource(GameAssets {
         bullet_scene: assets.load("Bullet.glb#Scene0"),
     });
 }
+
 
 
 fn enemy_shooting(
@@ -185,45 +233,4 @@ fn bullet_despawn(
             commands.entity(entity).despawn_recursive();
         }
     }
-}
-
-#[derive(Component)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-    Nonmoving,
-}
-
-#[derive(Component)]
-pub struct Direction2D {
-    vertical: Direction,
-    horizontal: Direction,
-}
-
-
-#[derive(Resource)]
-pub struct GameAssets {
-    bullet_scene: Handle<Scene>,
-}
-
-#[derive(Reflect, Component, Default)]
-#[reflect(Component)]
-pub struct Enemy {
-    shooting_timer: Timer,
-}
-
-#[derive(Component)]
-pub struct Player {
-    move_speed: f32,
-}
-
-#[derive(Reflect, Component, Default)]
-#[reflect(Component)]
-pub struct Lifetime {
-    timer: Timer,
-}
-
-#[derive(Component)]
-pub struct Camera;
+}*/
