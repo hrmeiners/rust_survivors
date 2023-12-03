@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use Vec3;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+//use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 
 fn main() {
@@ -21,24 +22,22 @@ App::new()
     .add_state::<GameState>()
 
     //inspector setup
-    .add_plugins(WorldInspectorPlugin::new())
+    //.add_plugins(WorldInspectorPlugin::new())
 
-    //startup systems
+    //main menu systems
     .add_systems(OnEnter(GameState::MainMenu), main_menu_controls)
     .add_systems(OnExit(GameState::MainMenu), clear_main_menu)
-    
+    .add_systems(FixedUpdate, main_menu_buttons.run_if(in_state(GameState::MainMenu)))
 
-    .add_systems(FixedUpdate, button_system.run_if(in_state(GameState::MainMenu)))
-
-    //FixedUpdate systems
-    //.add_systems(Startup, spawn_basic_scene.run_if(in_state(GameState::InGame)))
-    //.add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
-    //.add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
+    //in game systems
+    .add_systems(OnEnter(GameState::InGame), spawn_game)
+    .add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
+    .add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
  
     .run();
 }
 
-fn button_system (
+fn main_menu_buttons (
     mut interaction_query: Query<
         (
             &Interaction, 
@@ -49,22 +48,21 @@ fn button_system (
         (Changed<Interaction>, With<Button>),
     >,
     mut text_query: Query<&mut Text>,
+    mut commands: Commands,
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Pressed => {
-                text.sections[0].value = "Press".to_string();
-                *color = Color::GREEN.into();
-                border_color.0 = Color::RED;
+                commands.insert_resource(NextState::<GameState>(Some(GameState::InGame)));
+                println!("Transitioned to InGame");
             }
             Interaction::Hovered => {
-                text.sections[0].value = "Hover".to_string();
-                *color = Color::DARK_GRAY.into();
+                *color = Color::WHITE.into();
                 border_color.0 = Color::WHITE;
             }
             Interaction::None => {
-                text.sections[0].value = "Button".to_string();
+                text.sections[0].value = "Play Game".to_string();
                 *color = Color::GRAY.into();
                 border_color.0 = Color::BLACK;
             }
@@ -86,8 +84,10 @@ fn clear_main_menu (
 fn main_menu_controls(
     mut commands: Commands,
 ) {
-   commands.spawn(Camera2dBundle::default()).insert(MainMenuItem);
-   commands.spawn(NodeBundle {
+    //spawn camera
+    commands.spawn(Camera2dBundle::default()).insert(MainMenuItem);
+    //spawn button
+    commands.spawn(NodeBundle {
         style: Style {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
@@ -96,21 +96,21 @@ fn main_menu_controls(
             ..default()
         },
         ..default()
-   })
-   .insert(MainMenuItem)
-   //button shape, color, etc.
-   .with_children(|parent| {
+    })
+    .insert(MainMenuItem)
+    //button shape, color, etc.
+    .with_children(|parent| {
         parent.spawn(ButtonBundle {
             style: Style {
-                width: Val::Px(150.0),
-                height: Val::Px(65.0),
+                width: Val::Px(200.0),
+                height: Val::Px(80.0),
                 border: UiRect::all(Val::Px(5.0)),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
             },
             border_color: BorderColor(Color::BLACK),
-            background_color: BackgroundColor(Color::GRAY),
+            background_color: BackgroundColor(Color::ANTIQUE_WHITE),
             ..default()
         })
         //button text
@@ -124,12 +124,12 @@ fn main_menu_controls(
                 },
             ));
         });
-   });
+    });
 }
 
 
 
-fn spawn_basic_scene(
+fn spawn_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>
 ) {
@@ -175,6 +175,54 @@ fn spawn_basic_scene(
     commands.entity(player).push_children(&[camera_child]);
 }
 
+pub fn spawn_player(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+) {
+    let window = window_query.get_single().unwrap();
+
+    let player = commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("poe_0.png"),
+            transform:  Transform {
+                            translation: Vec3::new(window.width()/2.0, window.height()/2.0, 0.0),
+                            scale: Vec3::new(0.25, 0.25, 0.25),
+                            ..default()
+                        },
+            ..default()
+        }, 
+        Player {
+            move_speed: 100.0,
+        },
+        Name::new("Poe Ratcho"),
+    )).id();
+
+    //spawn camera
+    let camera_child = commands.spawn((
+        Camera2dBundle::default(),
+        Camera,
+    )).id();
+
+    //link player and camera so camera always follows player
+    commands.entity(player).push_children(&[camera_child]);
+}
+
+
+pub fn spawn_enemies(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+) {
+    let window = window_query.get_single().unwrap();
+
+    for _ in 0..4 {
+        
+    }
+}
+
+
+
 
 fn enemy_movement(
     time: Res<Time>,
@@ -203,25 +251,33 @@ fn enemy_movement(
 }
 
 
-fn player_movement(
-    time: Res<Time>,
-    keys: Res<Input<KeyCode>>,
-    mut player_position: Query<(&Player, &mut Transform)>
-) {
-    for(player, mut transform) in  &mut player_position {
 
-        if keys.pressed(KeyCode::W) {
-            transform.translation.y += player.move_speed * time.delta_seconds();
+fn player_movement(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut player_query: Query<(&mut Transform, &Player)>,
+    time: Res<Time>,
+) {
+    for (mut transform, player) in &mut player_query {
+        let mut direction = Vec3::ZERO;
+
+        if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
+            direction += Vec3::new(-1.0, 0.0, 0.0);
         }
-        if keys.pressed(KeyCode::S) {
-            transform.translation.y -= player.move_speed * time.delta_seconds()
+        if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
+            direction += Vec3::new(1.0, 0.0, 0.0);
         }
-        if keys.pressed(KeyCode::D) {
-            transform.translation.x += player.move_speed * time.delta_seconds()
+        if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
+            direction += Vec3::new(0.0, 1.0, 0.0);
         }
-        if keys.pressed(KeyCode::A) {
-            transform.translation.x -= player.move_speed * time.delta_seconds()
-        } 
+        if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
+            direction += Vec3::new(0.0, -1.0, 0.0);
+        }
+
+        if direction.length() > 0.0 {
+            direction = direction.normalize();
+        }
+
+        transform.translation += direction * player.move_speed * time.delta_seconds();
     }
 }
 
@@ -244,7 +300,8 @@ pub struct MainMenuItem;
 
 #[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
 pub enum GameState {
-    #[default] MainMenu,
+    #[default]
+    MainMenu,
     PauseMenu,
     InGame,
 }
