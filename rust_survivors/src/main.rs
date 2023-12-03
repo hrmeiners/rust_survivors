@@ -18,39 +18,113 @@ App::new()
     }))
 
     //add game states
-    .add_state::<AppState>()
+    .add_state::<GameState>()
 
     //inspector setup
     .add_plugins(WorldInspectorPlugin::new())
 
     //startup systems
-    .add_systems(Startup, spawn_basic_scene)
+    .add_systems(OnEnter(GameState::MainMenu), main_menu_controls)
+    .add_systems(OnExit(GameState::MainMenu), clear_main_menu)
+    
 
-   // .add_systems(FixedUpdate, main_menu_controls)
+    .add_systems(FixedUpdate, button_system.run_if(in_state(GameState::MainMenu)))
 
     //FixedUpdate systems
-    .add_systems(FixedUpdate, player_movement)
-    .add_systems(FixedUpdate, enemy_movement)
+    //.add_systems(Startup, spawn_basic_scene.run_if(in_state(GameState::InGame)))
+    //.add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
+    //.add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
  
     .run();
+}
+
+fn button_system (
+    mut interaction_query: Query<
+        (
+            &Interaction, 
+            &mut BackgroundColor, 
+            &mut BorderColor, 
+            &Children
+        ), 
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Pressed => {
+                text.sections[0].value = "Press".to_string();
+                *color = Color::GREEN.into();
+                border_color.0 = Color::RED;
+            }
+            Interaction::Hovered => {
+                text.sections[0].value = "Hover".to_string();
+                *color = Color::DARK_GRAY.into();
+                border_color.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                text.sections[0].value = "Button".to_string();
+                *color = Color::GRAY.into();
+                border_color.0 = Color::BLACK;
+            }
+        }
+    }
+}
+
+fn clear_main_menu (
+    mut commands: Commands,
+    mut menu_items_query: Query<Entity, &MainMenuItem>
+) {
+    for item in &mut menu_items_query {
+        commands.entity(item).despawn_recursive();
+    }
 }
 
 
 
 fn main_menu_controls(
-    mut keys: ResMut<Input<KeyCode>>,
-    mut app_state: State<AppState>
+    mut commands: Commands,
 ) {
-    if app_state.eq(&AppState::MainMenu) {
-        if keys.just_pressed(KeyCode::Return) {
-            NextState(Some(AppState::InGame));
-        }
-    } else {
-        if keys.just_pressed(KeyCode::Escape) {
-            NextState(Some(AppState::MainMenu));
-            keys.reset(KeyCode::Escape);
-        }
-    }
+   commands.spawn(Camera2dBundle::default()).insert(MainMenuItem);
+   commands.spawn(NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        ..default()
+   })
+   .insert(MainMenuItem)
+   //button shape, color, etc.
+   .with_children(|parent| {
+        parent.spawn(ButtonBundle {
+            style: Style {
+                width: Val::Px(150.0),
+                height: Val::Px(65.0),
+                border: UiRect::all(Val::Px(5.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            border_color: BorderColor(Color::BLACK),
+            background_color: BackgroundColor(Color::GRAY),
+            ..default()
+        })
+        //button text
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Button",
+                TextStyle {
+                    font_size: 40.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            ));
+        });
+   });
 }
 
 
@@ -152,6 +226,7 @@ fn player_movement(
 }
 
 
+//------- COMPONENTS ------
 
 #[derive(Component)]
 pub struct Enemy;
@@ -164,12 +239,18 @@ pub struct Player {
 #[derive(Component)]
 pub struct Camera;
 
+#[derive(Component)]
+pub struct MainMenuItem;
+
 #[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
-pub enum AppState {
+pub enum GameState {
     #[default] MainMenu,
     PauseMenu,
     InGame,
 }
+
+
+
 
 
 
