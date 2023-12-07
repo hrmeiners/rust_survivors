@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use rand::prelude::*;
 use Vec3;
-//use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 
 fn main() {
@@ -21,8 +21,8 @@ App::new()
     //add game states
     .add_state::<GameState>()
 
-    //inspector setup
-    //.add_plugins(WorldInspectorPlugin::new())
+    .add_systems(OnEnter(GameState::InGame), spawn_enemies)
+
 
     //main menu systems
     .add_systems(OnEnter(GameState::MainMenu), main_menu_controls)
@@ -217,7 +217,21 @@ pub fn spawn_enemies(
     let window = window_query.get_single().unwrap();
 
     for _ in 0..4 {
-        
+        let random_x = random::<f32>() * (window.width() / 2.0) + 200.0;
+        let random_y = random::<f32>() * (window.height() / 2.0) + 200.0;
+
+        commands.spawn((
+            SpriteBundle {
+                transform:  Transform {
+                                translation: Vec3::new(random_x, random_y, 0.0),
+                                scale: Vec3::new(0.1, 0.1, 0.1),
+                                ..default()
+                            },
+                texture: asset_server.load("slime.png"),
+                ..default()
+            },
+            Enemy,
+        ));
     }
 }
 
@@ -280,6 +294,29 @@ fn player_movement(
         transform.translation += direction * player.move_speed * time.delta_seconds();
     }
 }
+
+
+pub fn enemy_hit_player(
+    mut commands: Commands,
+    mut player_query: Query<(Entity, &Transform, &Handle<Image>), With<Player>>,
+    mut enemy_query: Query<(&Transform, &Handle<Image>), With<Enemy>>,
+    assets: Res<Assets<Image>>,
+   // audio: Res<Audio>,
+) {
+    if let Ok((player_entity, player_transform, player_sprite)) = player_query.get_single_mut() {
+        for (enemy_transform, enemy_sprite) in enemy_query.iter() {
+            let distance = player_transform.translation.distance(enemy_transform.translation);
+            let player_radius  = assets.get(player_sprite).unwrap().width();
+            let enemy_radius = assets.get(enemy_sprite).unwrap().size();
+
+
+
+            if distance < player_radius + enemy_radius {
+
+            }
+        }
+    }
+} 
 
 
 //------- COMPONENTS ------
