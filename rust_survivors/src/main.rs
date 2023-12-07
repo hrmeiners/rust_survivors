@@ -1,39 +1,53 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use bevy_rapier2d::prelude::*;
 use rand::prelude::*;
 use Vec3;
 
 
 fn main() {
-App::new()
-    //window setup and default plugins
-    .insert_resource(ClearColor(Color::rgb(0.2,0.2,0.2)))
-    .add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            resolution: (1280.0, 720.0).into(),
-            title: "Rust Survivors".to_string(),
-            resizable: false,
+    App::new()
+        //window setup and default plugins
+        .insert_resource(ClearColor(Color::rgb(0.2,0.2,0.2)))
+        .add_plugins(
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                resolution: (1280.0, 720.0).into(),
+                title: "Rust Survivors".to_string(),
+                resizable: false,
+                ..default()
+            }),
             ..default()
-        }),
-        ..default()
-    }))
+            }))
 
-    //add game states
-    .add_state::<GameState>()
+        .add_plugins(RapierPhysicsPlugin::<()>::default())
+        //.add_plugins(RapierDebugRenderPlugin::default())
 
-    .add_systems(OnEnter(GameState::InGame), spawn_enemies)
+        /*
+        .add_plugins(DefaultPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugin(RapierDebugRenderPlugin::default())
+        .add_startup_system(setup_graphics)
+        .add_startup_system(setup_physics)
+        .add_system(print_ball_altitude)
+        .run(); */
+
+        //add game states
+        .add_state::<GameState>()
+
+        .add_systems(OnEnter(GameState::InGame), spawn_enemies)
 
 
-    //main menu systems
-    .add_systems(OnEnter(GameState::MainMenu), main_menu_controls)
-    .add_systems(OnExit(GameState::MainMenu), clear_main_menu)
-    .add_systems(FixedUpdate, main_menu_buttons.run_if(in_state(GameState::MainMenu)))
+        //main menu systems
+        .add_systems(OnEnter(GameState::MainMenu), main_menu_controls)
+        .add_systems(OnExit(GameState::MainMenu), clear_main_menu)
+        .add_systems(FixedUpdate, main_menu_buttons.run_if(in_state(GameState::MainMenu)))
 
-    //in game systems
-    .add_systems(OnEnter(GameState::InGame), spawn_game)
-    .add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
-    .add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
- 
+        //in game systems
+        .add_systems(OnEnter(GameState::InGame), spawn_game)
+        .add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
+        .add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
+    
     .run();
 }
 
@@ -295,28 +309,6 @@ fn player_movement(
     }
 }
 
-
-pub fn enemy_hit_player(
-    mut commands: Commands,
-    mut player_query: Query<(Entity, &Transform, &Handle<Image>), With<Player>>,
-    mut enemy_query: Query<(&Transform, &Handle<Image>), With<Enemy>>,
-    assets: Res<Assets<Image>>,
-   // audio: Res<Audio>,
-) {
-    if let Ok((player_entity, player_transform, player_sprite)) = player_query.get_single_mut() {
-        for (enemy_transform, enemy_sprite) in enemy_query.iter() {
-            let distance = player_transform.translation.distance(enemy_transform.translation);
-            let player_radius  = assets.get(player_sprite).unwrap().width();
-            let enemy_radius = assets.get(enemy_sprite).unwrap().size();
-
-
-
-            if distance < player_radius + enemy_radius {
-
-            }
-        }
-    }
-} 
 
 
 //------- COMPONENTS ------
