@@ -4,6 +4,7 @@ use rand::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use super::components::*;
+use super::resources::*;
 use crate::player::components::Player;
 
 
@@ -29,19 +30,20 @@ pub fn spawn_enemies(
                 ..default()
             },
             Enemy,
+            Collider::cuboid(80.0, 80.0)
         ));
     }
 }
 
 
 pub fn enemy_movement(
+    mut enemy_positions: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
+    player_position: Query<&Transform, With<Player>>,
     time: Res<Time>,
-    mut enemy_positions: Query<(&mut Transform, With<Enemy>, Without<Player>)>,
-    player_position: Query<(&Transform, With<Player>)>
 ) {
-    let (player_transform, player) = player_position.single();
+    let player_transform = player_position.single();
 
-    for(mut enemy_transform, _, _) in  &mut enemy_positions {
+    for mut enemy_transform in  enemy_positions.iter_mut() {
         //update enemy translation x
         if player_transform.translation.x < enemy_transform.translation.x {
             enemy_transform.translation.x -= 10.0 * time.delta_seconds();
@@ -61,3 +63,38 @@ pub fn enemy_movement(
 }
 
 
+pub fn tick_enemy_spawn_timer(
+    time: Res<Time>,
+    mut enemy_spawn_timer: ResMut<EnemySpawnTimer>,
+) {
+    enemy_spawn_timer.timer.tick(time.delta());
+}
+
+
+pub fn spawn_enemies_over_time(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    enemy_spawn_timer: Res<EnemySpawnTimer>,
+) {
+    if enemy_spawn_timer.timer.finished() {
+        let window = window_query.get_single().unwrap();
+
+        let random_x = random::<f32>() * (window.width() / 2.0) + 200.0;
+        let random_y = random::<f32>() * (window.height() / 2.0) + 200.0;
+
+        commands.spawn((
+            SpriteBundle {
+                transform:  Transform {
+                                translation: Vec3::new(random_x, random_y, 0.0),
+                                scale: Vec3::new(0.1, 0.1, 0.1),
+                                ..default()
+                            },
+                texture: asset_server.load("slime.png"),
+                ..default()
+            },
+            Enemy,
+            Collider::cuboid(80.0, 80.0)
+        ));
+    }
+}
