@@ -11,5 +11,5 @@ pub struct MyButton {
 #[derive(PartialEq)]
 pub enum Buttons {
     PoeButton,
-    OtherButton,
+    DogButton,
 }

@@ -22,8 +22,6 @@ pub fn spawn_main_menu(
         },
         ..default()
     })
-    .insert(MainMenuItem)
-    .insert(MyButton {target: Buttons::PoeButton})
     .with_children(|parent| {
         parent.spawn(ButtonBundle {
             style: Style {
@@ -47,10 +45,10 @@ pub fn spawn_main_menu(
                     ..default()
                 },
             ));
-        });
-    });
-
-/*
+        })
+        .insert(MyButton {target: Buttons::PoeButton});
+    })
+    .insert(MainMenuItem);
 
     //spawn Dog Button
     commands.spawn(NodeBundle {
@@ -63,8 +61,6 @@ pub fn spawn_main_menu(
         },
         ..default()
     })
-    .insert(MainMenuItem)
-    .insert(MyButton {target: Buttons::OtherButton})
     .with_children(|parent| {
         parent.spawn(ButtonBundle {
             style: Style {
@@ -88,22 +84,25 @@ pub fn spawn_main_menu(
                     ..default()
                 },
             ));
-        });
-    }); */
+        })
+        .insert(MyButton {target: Buttons::DogButton});
+    })
+    .insert(MainMenuItem); 
+
 }
 
 
 pub fn main_menu_button_controls (
     mut commands: Commands,
     mut interaction_query: Query<
-        (
+        (   
             &Interaction, 
             &mut BackgroundColor, 
             &mut BorderColor, 
             &Children,
-            &MyButton,
+            &MyButton
         ),
-        (Changed<Interaction>, With<Button>),
+        (Changed<Interaction>, With<Button>,),
     >,
     mut text_query: Query<&mut Text>,
     mut character_choice_event_writer: EventWriter<CharacterChoice>
@@ -119,7 +118,7 @@ pub fn main_menu_button_controls (
                         character_choice_event_writer.send(CharacterChoice {character: Characters::Poe});
                     }
                     Interaction::Hovered => {
-                        *color = Color::WHITE.into();
+                        *color = Color::BLUE.into();
                         border_color.0 = Color::WHITE;
                     }
                     Interaction::None => {
@@ -129,14 +128,15 @@ pub fn main_menu_button_controls (
                     }
                 }
             },
-            Buttons::OtherButton => {
+            
+            Buttons::DogButton => {
                 match *interaction {
                     Interaction::Pressed => {
                         commands.insert_resource(NextState::<GameState>(Some(GameState::InGame)));
                         character_choice_event_writer.send(CharacterChoice {character: Characters::Dog});
                     }
                     Interaction::Hovered => {
-                        *color = Color::WHITE.into();
+                        *color = Color::GREEN.into();
                         border_color.0 = Color::WHITE;
                     }
                     Interaction::None => {
@@ -160,4 +160,3 @@ pub fn clear_main_menu (
         commands.entity(item).despawn_recursive();
     }
 }
-
