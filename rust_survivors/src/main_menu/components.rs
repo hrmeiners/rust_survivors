@@ -12,4 +12,5 @@ pub struct MyButton {
 pub enum Buttons {
     PoeButton,
     DogButton,
+    GunButton,
 }

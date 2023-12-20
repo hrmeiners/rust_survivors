@@ -17,6 +17,7 @@ pub fn spawn_player(
 
     for choice in character_choice_event_reader.read() {
         match choice.character {
+
             Characters::Poe => {
                 //spawn Poe
                 let player = commands.spawn((
@@ -41,6 +42,10 @@ pub fn spawn_player(
                     },
                     Collider::cuboid(80.0, 80.0),
                     ActiveEvents::COLLISION_EVENTS,
+                    CollisionGroups {
+                        memberships: Group::GROUP_1,    //player collider is in group 1    
+                        filters: Group::default(),
+                    },
                 )) 
                 .id();
                 //spawn camera
@@ -76,6 +81,10 @@ pub fn spawn_player(
                     },
                     Collider::cuboid(80.0, 80.0),
                     ActiveEvents::COLLISION_EVENTS,
+                    CollisionGroups {
+                        memberships: Group::GROUP_1,    //player collider is in group 1
+                        filters: Group::default(),
+                    },
                 )) 
                 .id();
                 //spawn camera
@@ -111,6 +120,10 @@ pub fn spawn_player(
                     },
                     Collider::cuboid(80.0, 80.0),
                     ActiveEvents::COLLISION_EVENTS,
+                    CollisionGroups {
+                        memberships: Group::GROUP_1,    //player collider is in group 1
+                        filters: Group::default(),
+                    },
                 )) 
                 .id();
                 //spawn camera
@@ -123,7 +136,6 @@ pub fn spawn_player(
             },
         };
     }
-
 }
 
 
@@ -157,7 +169,7 @@ pub fn player_movement(
 }
 
 
-pub fn player_check_collision(
+pub fn player_check_collisions(
     mut game_over_event_writer: EventWriter<GameOver>,
     player_query: Query<Entity, With<Player>>,
     mut player_health_query: Query<&mut Health, With<Player>>,
@@ -165,18 +177,20 @@ pub fn player_check_collision(
 ) {
     let player = player_query.single();
     let mut player_health = player_health_query.single_mut();
-    //get all colliders in contact with player
-    for contact_pair in rapier_context.contacts_with(player) {
-        let other_collider = if contact_pair.collider1() == player {
-            contact_pair.collider2()
-        } else {
-            contact_pair.collider1()
-        };
 
-        println!("Collision!");
-        
+    //get all colliders in contact with player
+    for _contact_pair in rapier_context.contacts_with(player) {
+        //get attack from the collider somehow
+        //do player health/armor and collider attack calculations
+        /*
+            let other_collider = if contact_pair.collider1() == player {
+                contact_pair.collider2()
+            } else {
+                contact_pair.collider1()
+            }; 
+        */
+
         player_health.current_hp -= 1.0;
-        println!("Player health: {}", player_health.current_hp);
 
         //if player has no more health, end the game
         if player_health.current_hp <= 0.0 {

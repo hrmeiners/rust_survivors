@@ -16,6 +16,6 @@ impl Plugin for PlayerPlugin {
         app .add_event::<CharacterChoice>()
             .add_systems(OnEnter(GameState::InGame), spawn_player)
             .add_systems(FixedUpdate, player_movement.run_if(in_state(GameState::InGame)))
-            .add_systems(FixedUpdate, player_check_collision.run_if(in_state(GameState::InGame)));
+            .add_systems(FixedUpdate, player_check_collisions.run_if(in_state(GameState::InGame)));
     }
 }

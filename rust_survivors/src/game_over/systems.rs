@@ -11,7 +11,7 @@ pub fn handle_game_over(
     mut commands: Commands,
     mut game_over_event_reader: EventReader<GameOver>
 ) {
-    for event in game_over_event_reader.read() {
+    for _event in game_over_event_reader.read() {
         println!("Game Over! Thanks for playing!");
         commands.insert_resource(NextState::<GameState>(Some(GameState::GameOver)));
     }
@@ -37,52 +37,11 @@ pub fn clear_all_entities(
 pub fn spawn_game_over_screen(
     mut commands: Commands,
 ) {
-      //spawn camera
-      commands.spawn(Camera2dBundle::default()).insert(GameOverScreenItem);
+    //spawn camera
+    commands.spawn(Camera2dBundle::default()).insert(GameOverScreenItem);
 
-      //spawn play again button
-      commands.spawn(NodeBundle {
-          style: Style {
-              width: Val::Percent(100.0),
-              height: Val::Percent(100.0),
-              align_items: AlignItems::Center,
-              justify_content: JustifyContent::Center,
-              ..default()
-          },
-          ..default()
-      })
-      .insert(GameOverScreenItem)
-      //button shape, color, etc.
-      .with_children(|parent| {
-          parent.spawn(ButtonBundle {
-              style: Style {
-                  width: Val::Px(200.0),
-                  height: Val::Px(80.0),
-                  border: UiRect::all(Val::Px(5.0)),
-                  justify_content: JustifyContent::Center,
-                  align_items: AlignItems::Center,
-                  ..default()
-              },
-              border_color: BorderColor(Color::BLACK),
-              background_color: BackgroundColor(Color::ANTIQUE_WHITE),
-              ..default()
-          })
-          //button text
-          .with_children(|parent| {
-              parent.spawn(TextBundle::from_section(
-                  "Play Again?",
-                  TextStyle {
-                      font_size: 40.0,
-                      color: Color::BLACK,
-                      ..default()
-                  },
-              ));
-          });
-      });
-    
-/*
-      //spawn main menu button
-      commands.spawn(NodeBundle {
+    //spawn play again button
+    commands.spawn(NodeBundle {
         style: Style {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
@@ -93,7 +52,6 @@ pub fn spawn_game_over_screen(
         ..default()
     })
     .insert(GameOverScreenItem)
-    //button shape, color, etc.
     .with_children(|parent| {
         parent.spawn(ButtonBundle {
             style: Style {
@@ -108,10 +66,9 @@ pub fn spawn_game_over_screen(
             background_color: BackgroundColor(Color::ANTIQUE_WHITE),
             ..default()
         })
-        //button text
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "Main Menu?",
+                "Play Again?",
                 TextStyle {
                     font_size: 40.0,
                     color: Color::BLACK,
@@ -119,8 +76,7 @@ pub fn spawn_game_over_screen(
                 },
             ));
         });
-    }); 
-*/
+    });
 }
 
 
@@ -141,8 +97,8 @@ pub fn game_over_button_controls (
         let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Pressed => {
-                commands.insert_resource(NextState::<GameState>(Some(GameState::InGame)));
-                println!("Playing again!");
+                commands.insert_resource(NextState::<GameState>(Some(GameState::MainMenu)));
+                println!("Back to Main Menu!");
             }
             Interaction::Hovered => {
                 *color = Color::WHITE.into();

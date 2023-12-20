@@ -16,6 +16,8 @@ impl Plugin for EnemyPlugin {
             .add_systems(OnEnter(GameState::InGame), spawn_enemies)
             .add_systems(FixedUpdate, tick_enemy_spawn_timer.run_if(in_state(GameState::InGame)))
             .add_systems(FixedUpdate, spawn_enemies_over_time.run_if(in_state(GameState::InGame)))
-            .add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)));
+            .add_systems(FixedUpdate, enemy_movement.run_if(in_state(GameState::InGame)))
+            .add_systems(FixedUpdate, enemy_check_collisions.run_if(in_state(GameState::InGame)))
+            .add_systems(FixedUpdate, enemy_death.run_if(in_state(GameState::InGame)));
     }
 }

@@ -16,7 +16,7 @@ pub fn spawn_main_menu(
         style: Style {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
-            align_items: AlignItems::Center,
+            align_items: AlignItems::FlexStart,
             justify_content: JustifyContent::Center,
             ..default()
         },
@@ -28,8 +28,8 @@ pub fn spawn_main_menu(
                 width: Val::Px(200.0),
                 height: Val::Px(80.0),
                 border: UiRect::all(Val::Px(5.0)),
-                justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             border_color: BorderColor(Color::BLACK),
@@ -38,7 +38,7 @@ pub fn spawn_main_menu(
         })
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "PoeButton",
+                "Poe",
                 TextStyle {
                     font_size: 40.0,
                     color: Color::BLACK,
@@ -55,8 +55,8 @@ pub fn spawn_main_menu(
         style: Style {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
-            align_items: AlignItems::End,
-            justify_content: JustifyContent::End,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
             ..default()
         },
         ..default()
@@ -67,8 +67,8 @@ pub fn spawn_main_menu(
                 width: Val::Px(200.0),
                 height: Val::Px(80.0),
                 border: UiRect::all(Val::Px(5.0)),
-                justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             border_color: BorderColor(Color::BLACK),
@@ -77,7 +77,7 @@ pub fn spawn_main_menu(
         })
         .with_children(|parent| {
             parent.spawn(TextBundle::from_section(
-                "DogButton",
+                "Dog",
                 TextStyle {
                     font_size: 40.0,
                     color: Color::BLACK,
@@ -89,6 +89,44 @@ pub fn spawn_main_menu(
     })
     .insert(MainMenuItem); 
 
+    //spawn Gun Button
+    commands.spawn(NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            align_items: AlignItems::FlexEnd,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        ..default()
+    })
+    .with_children(|parent| {
+        parent.spawn(ButtonBundle {
+            style: Style {
+                width: Val::Px(200.0),
+                height: Val::Px(80.0),
+                border: UiRect::all(Val::Px(5.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            border_color: BorderColor(Color::BLACK),
+            background_color: BackgroundColor(Color::ANTIQUE_WHITE),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Gun",
+                TextStyle {
+                    font_size: 40.0,
+                    color: Color::BLACK,
+                    ..default()
+                },
+            ));
+        })
+        .insert(MyButton {target: Buttons::GunButton});
+    })
+    .insert(MainMenuItem);
 }
 
 
@@ -140,14 +178,31 @@ pub fn main_menu_button_controls (
                         border_color.0 = Color::WHITE;
                     }
                     Interaction::None => {
-                        text.sections[0].value = "Doggie".to_string();
+                        text.sections[0].value = "Dog".to_string();
                         *color = Color::GRAY.into();
                         border_color.0 = Color::BLACK;
                     }
                 }
             },
-        };
 
+            Buttons::GunButton => {
+                match *interaction {
+                    Interaction::Pressed => {
+                        commands.insert_resource(NextState::<GameState>(Some(GameState::InGame)));
+                        character_choice_event_writer.send(CharacterChoice {character: Characters::Gun});
+                    }
+                    Interaction::Hovered => {
+                        *color = Color::ORANGE_RED.into();
+                        border_color.0 = Color::WHITE;
+                    }
+                    Interaction::None => {
+                        text.sections[0].value = "Gun".to_string();
+                        *color = Color::GRAY.into();
+                        border_color.0 = Color::BLACK;
+                    }
+                } 
+            },
+        };
     }
 }
 
