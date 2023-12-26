@@ -11,7 +11,7 @@ pub fn handle_game_over(
     mut commands: Commands,
     mut game_over_event_reader: EventReader<GameOver>
 ) {
-    for _event in game_over_event_reader.read() {
+    for _event in game_over_event_reader.iter() {
         println!("Game Over! Thanks for playing!");
         commands.insert_resource(NextState::<GameState>(Some(GameState::GameOver)));
     }

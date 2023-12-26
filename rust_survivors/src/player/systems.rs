@@ -15,7 +15,7 @@ pub fn spawn_player(
 ) {
     let window = window_query.get_single().unwrap();
 
-    for choice in character_choice_event_reader.read() {
+    for choice in character_choice_event_reader.iter() {
         match choice.character {
 
             Characters::Poe => {

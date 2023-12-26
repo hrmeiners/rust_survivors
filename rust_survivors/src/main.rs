@@ -6,6 +6,7 @@ mod enemy;
 mod player;
 mod main_menu;
 mod game_over;
+mod ui;
 
 
 #[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
@@ -30,7 +31,6 @@ pub fn exit_game(
 
 fn main() {
     App::new()
-        //window setup and default plugins
         .insert_resource(ClearColor(Color::rgb(0.2,0.2,0.2)))
         .add_plugins(
             DefaultPlugins.set(WindowPlugin {
@@ -47,6 +47,7 @@ fn main() {
 
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         .add_plugins(RapierDebugRenderPlugin::default())
+
 
         .add_plugins(main_menu::MainMenuPlugin)
         .add_plugins(game_over::GameOverPlugin)

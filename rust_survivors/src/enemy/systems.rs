@@ -118,7 +118,7 @@ pub fn spawn_enemies_over_time(
 }
 
 
-//collision detection is working 100%
+//collision detection is not working 100%
 //enemies are still deleting each other --> might be something wrong with the collision groups thing
 
 pub fn enemy_check_collisions(
@@ -142,6 +142,8 @@ pub fn enemy_death(
 ) {
     for (enemy, health, transform) in &enemy_query {
         if health.current_hp <= 0.0 {
+
+            /*
             //spawn exp gemstone right where the enemy died
             let exp_gemstone = commands.spawn((
                 SpriteBundle {
@@ -157,6 +159,7 @@ pub fn enemy_death(
                 ActiveEvents::COLLISION_EVENTS,
                 Exp_Gem { value: 10.0 }
             ));
+            */
 
             //despawn enemy
             commands.entity(enemy).despawn_recursive();
