@@ -6,7 +6,6 @@ mod enemy;
 mod player;
 mod main_menu;
 mod game_over;
-mod ui;
 
 
 #[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
@@ -47,7 +46,6 @@ fn main() {
 
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         .add_plugins(RapierDebugRenderPlugin::default())
-
 
         .add_plugins(main_menu::MainMenuPlugin)
         .add_plugins(game_over::GameOverPlugin)

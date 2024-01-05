@@ -138,9 +138,9 @@ pub fn enemy_check_collisions(
 pub fn enemy_death(
     mut commands: Commands,
     enemy_query: Query<(Entity, &Health, &Transform), With<Enemy>>,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
 ) {
-    for (enemy, health, transform) in &enemy_query {
+    for (enemy, health, _transform) in &enemy_query {
         if health.current_hp <= 0.0 {
 
             /*

@@ -5,6 +5,6 @@ pub struct Enemy;
 
 
 #[derive(Component)]
-pub struct Exp_Gem {
+pub struct ExpGem {
     pub value: f32,
 }
