@@ -1,102 +1,126 @@
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use super::components::*;
 use crate::GameState;
 use crate::player::{events::*, components::*};
 
 
-//MAYBE HAVE TWO UI NODES INSTEAD OF ONE? A BUTTON UI NODE AND A TITLE CARD UI NODE?
-//PERHAPS HAVE SCROLLING LIST OF CHARACTERS?
-
-
-
 pub fn spawn_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     //spawn camera
     commands.spawn(Camera2dBundle::default()).insert(MainMenuItem);
 
-    //root node
-    commands
-        .spawn(NodeBundle {
+    let window = window_query.get_single().unwrap();
+
+    commands.spawn(
+        NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
+                flex_wrap: FlexWrap::Wrap,
+                ..default()
+            },
+            background_color: BackgroundColor(Color::MIDNIGHT_BLUE),
+            ..default()
+    })
+    .insert(MainMenuItem)
+
+    .with_children(|parent| {
+        //title area
+        parent.spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(50.0),
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 0.0),
+                ..default()
+            },
+            background_color: BackgroundColor(Color::WHITE),
+            ..default()
+        })
+
+        .with_children(|parent| {
+            //left logo
+            parent.spawn((ImageBundle {
+                style: Style {
+                    ..Default::default()
+                },
+                image: UiImage::new(asset_server.load("gun_brand.png")),
+                ..default()
+                },
+            ));
+            
+            //title
+            parent.spawn(TextBundle {
+                style:  Style {
+                    width: Val::Percent(30.0),
+                    ..default()
+                },
+                text: Text::from_section(
+                    "Rust Survivors",
+                    TextStyle {
+                        font: asset_server.load("fonts/KingArthurSpecialNormal-XGPP.ttf"),
+                        font_size: 90.0,
+                        color: Color::BLACK.into(),
+                    })
+                    .with_alignment(TextAlignment::Center),
+                ..default()
+            });
+
+            //right logo
+            parent.spawn((ImageBundle {
+                style: Style {
+                    ..Default::default()
+                },
+                image: UiImage {
+                    texture: asset_server.load("gun_brand.png"),
+                    flip_x: true,
+                    ..default()
+                },
+                ..default()
+                },
+            ));
+        });
+
+        //button area
+        parent.spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(50.0),
+                justify_content: JustifyContent::SpaceBetween,
                 align_content: AlignContent::Center,
                 ..default()
             },
+            transform: Transform {
+                translation: Vec3::new(0.0, 500.0, 0.0),
+                ..default()
+            },
+            background_color: BackgroundColor(Color::BLACK),
             ..default()
         })
-        
-        //logo
-        .with_children(|parent| {
-            parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        width: Val::Px(300.0),
-                        height: Val::Px(300.0),
-                        margin: UiRect::top(Val::VMin(5.0)),
-                        justify_self: JustifySelf::Center,
-                        ..default()
-                    },
-                    background_color: Color::WHITE.into(),
-                    ..default()
-                },
-                //logo image
-                UiImage::new(asset_server.load("gun_brand.png")),
-            ));
-        })
 
-        //main menu title
-        .with_children(|parent|{
-            parent.spawn((NodeBundle {
-                style: Style {
-                    width: Val::Px(500.0),
-                    height: Val::Px(250.0),
-                    margin: UiRect::top(Val::VMin(5.0)),
-                    justify_self: JustifySelf::Center,
-                    align_content: AlignContent::Center,
-                    ..default()
-                },
-                background_color: Color::WHITE.into(),
-                ..default()
-                },
-            ))
-            //text
-            .with_children(|parent|{
-                parent.spawn(TextBundle::from_section(
-                    "Rust Survivors",
-                    TextStyle {
-                        font_size: 80.0,
-                        color: Color::BLACK,
-                        ..default()
-                    },
-                ));
-            });
-        })
-
-        //------------ Buttons -------------------
-        //Poe button
         .with_children(|parent| {
+            //poe button
             parent.spawn(ButtonBundle {
                 style: Style {
                     width: Val::Px(200.0),
                     height: Val::Px(80.0),
                     border: UiRect::all(Val::Px(5.0)),
-                    align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
                 border_color: BorderColor(Color::BLACK),
-                background_color: BackgroundColor(Color::ANTIQUE_WHITE),
+                background_color: BackgroundColor(Color::WHITE),
                 ..default()
             })
-            //marker components
             .insert(MyButton {target: Buttons::PoeButton})
-            .insert(MainMenuItem)
-            //text
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_section(
                     "Poe",
@@ -107,27 +131,20 @@ pub fn spawn_main_menu(
                     },
                 ));
             });
-        })
 
-        //Dog Button
-        .with_children(|parent| {
+            //dog button
             parent.spawn(ButtonBundle {
                 style: Style {
                     width: Val::Px(200.0),
                     height: Val::Px(80.0),
                     border: UiRect::all(Val::Px(5.0)),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
                     ..default()
                 },
                 border_color: BorderColor(Color::BLACK),
-                background_color: BackgroundColor(Color::ANTIQUE_WHITE),
+                background_color: BackgroundColor(Color::WHITE),
                 ..default()
             })
-            //marker components
             .insert(MyButton {target: Buttons::DogButton})
-            .insert(MainMenuItem)
-            //text
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_section(
                     "Dog",
@@ -138,27 +155,20 @@ pub fn spawn_main_menu(
                     },
                 ));
             });
-        })
-
-        //Gun Button
-        .with_children(|parent| {
+            
+            //gun button
             parent.spawn(ButtonBundle {
                 style: Style {
                     width: Val::Px(200.0),
                     height: Val::Px(80.0),
                     border: UiRect::all(Val::Px(5.0)),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
                     ..default()
                 },
                 border_color: BorderColor(Color::BLACK),
-                background_color: BackgroundColor(Color::ANTIQUE_WHITE),
+                background_color: BackgroundColor(Color::WHITE),
                 ..default()
             })
-            //marker components
             .insert(MyButton {target: Buttons::GunButton})
-            .insert(MainMenuItem)
-            //text
             .with_children(|parent| {
                 parent.spawn(TextBundle::from_section(
                     "Gun",
@@ -170,6 +180,7 @@ pub fn spawn_main_menu(
                 ));
             });
         });
+    });
 }
 
 
