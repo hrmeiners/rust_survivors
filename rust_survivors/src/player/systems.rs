@@ -5,6 +5,7 @@ use bevy_rapier2d::prelude::*;
 use super::components::*;
 use super::events::*;
 use crate::game_over::events::GameOver;
+use crate::enemy::components::*;
 
 
 pub fn spawn_player(
@@ -173,28 +174,62 @@ pub fn player_check_collisions(
     mut game_over_event_writer: EventWriter<GameOver>,
     player_query: Query<Entity, With<Player>>,
     mut player_health_query: Query<&mut Health, With<Player>>,
+    enemy_query: Query<Entity, With<Enemy>>,
     rapier_context: Res<RapierContext>,
 ) {
     let player = player_query.single();
     let mut player_health = player_health_query.single_mut();
 
     //get all colliders in contact with player
-    for _contact_pair in rapier_context.contacts_with(player) {
-        //get attack from the collider somehow
-        //do player health/armor and collider attack calculations
-        /*
-            let other_collider = if contact_pair.collider1() == player {
-                contact_pair.collider2()
-            } else {
-                contact_pair.collider1()
-            }; 
-        */
-
-        player_health.current_hp -= 1.0;
-
-        //if player has no more health, end the game
-        if player_health.current_hp <= 0.0 {
-            game_over_event_writer.send(GameOver);
+    for contact_pair in rapier_context.contacts_with(player) {
+    
+        // if the player is colliding with an enemy, lose health
+        let other_collider = if contact_pair.collider1() == player {
+            contact_pair.collider2()
+        } else {
+            contact_pair.collider1()
+        }; 
+        
+        for enemy in enemy_query.iter() {
+            if other_collider == enemy {
+                player_health.current_hp -= 1.0;
+                break;
+            }
         }
     }
+
+    //if player has no more health, end the game
+    if player_health.current_hp <= 0.0 {
+        game_over_event_writer.send(GameOver);
+    }
+}
+
+
+
+//TRYING TO DO COLLISIONS FOR EXP GEMS
+pub fn player_pickup_collisions(
+    player_query: Query<Entity, With<Player>>,
+    pickup_query: Query<Entity, With<Pickup>>,
+    rapier_context: Res<RapierContext>,
+) {
+    let player = player_query.single();
+
+    //get all colliders in contact with player
+    for contact_pair in rapier_context.contacts_with(player) {
+    
+        // if the player is colliding with an enemy, lose health
+        let other_collider = if contact_pair.collider1() == player {
+            contact_pair.collider2()
+        } else {
+            contact_pair.collider1()
+        }; 
+        
+        for pickup in pickup_query.iter() {
+            if other_collider == pickup {
+                
+                break;
+            }
+        }
+    }
+
 }

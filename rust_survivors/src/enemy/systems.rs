@@ -138,31 +138,38 @@ pub fn enemy_check_collisions(
 pub fn enemy_death(
     mut commands: Commands,
     enemy_query: Query<(Entity, &Health, &Transform), With<Enemy>>,
-    _asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
 ) {
-    for (enemy, health, _transform) in &enemy_query {
+    for (enemy, health, transform) in &enemy_query {
         if health.current_hp <= 0.0 {
-
-            /*
-            //spawn exp gemstone right where the enemy died
-            let exp_gemstone = commands.spawn((
-                SpriteBundle {
-                    texture: asset_server.load("exp_gem.png"),
-                    transform:  Transform {
-                                    translation: transform.translation,
-                                    scale: Vec3::new(0.25, 0.25, 0.25),
-                                    ..default()
-                                },
-                    ..default()
-                },
-                Collider::cuboid(10.0, 10.0),
-                ActiveEvents::COLLISION_EVENTS,
-                Exp_Gem { value: 10.0 }
-            ));
-            */
+            
+            if random::<f32>() <= 1.0 {
+                spawn_exp_gem(&mut commands, transform, &asset_server);
+            }
 
             //despawn enemy
             commands.entity(enemy).despawn_recursive();
         }
     }
+}
+
+
+pub fn spawn_exp_gem(
+    commands: &mut Commands,
+    enemy_transform: &Transform,
+    asset_server: &Res<AssetServer>,
+) {
+    //spawn exp gemstone right where the enemy died
+    let exp_gemstone = commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("exp_gem.png"),
+            transform:  *enemy_transform,
+            ..default()
+        },
+        Collider::cuboid(10.0, 10.0),
+        ActiveEvents::COLLISION_EVENTS,
+        ExpGem { value: 10.0 },
+        Pickup,
+    ));
+
 }

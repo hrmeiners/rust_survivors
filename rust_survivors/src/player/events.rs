@@ -5,3 +5,4 @@ use super::components::Characters;
 pub struct CharacterChoice {
     pub character: Characters,
 }
+

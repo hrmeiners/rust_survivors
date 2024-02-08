@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 
 use super::components::*;
 use crate::GameState;
@@ -9,12 +8,9 @@ use crate::player::{events::*, components::*};
 pub fn spawn_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     //spawn camera
     commands.spawn(Camera2dBundle::default()).insert(MainMenuItem);
-
-    let window = window_query.get_single().unwrap();
 
     commands.spawn(
         NodeBundle {
@@ -138,6 +134,7 @@ pub fn spawn_main_menu(
                     width: Val::Px(200.0),
                     height: Val::Px(80.0),
                     border: UiRect::all(Val::Px(5.0)),
+                    justify_content: JustifyContent::Center,
                     ..default()
                 },
                 border_color: BorderColor(Color::BLACK),
@@ -162,6 +159,7 @@ pub fn spawn_main_menu(
                     width: Val::Px(200.0),
                     height: Val::Px(80.0),
                     border: UiRect::all(Val::Px(5.0)),
+                    justify_content: JustifyContent::Center,
                     ..default()
                 },
                 border_color: BorderColor(Color::BLACK),

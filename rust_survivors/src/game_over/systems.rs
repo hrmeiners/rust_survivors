@@ -20,17 +20,11 @@ pub fn handle_game_over(
 
 pub fn clear_all_entities(
     mut commands: Commands,
-    enemy_query: Query<Entity, With<Enemy>>,
-    player_query: Query<Entity, With<Player>>,
+    entity_query: Query<Entity, Without<Window>>,
 ) {
-    for enemy in enemy_query.iter() {
-        commands.entity(enemy).despawn_recursive();
+    for entity in entity_query.iter() {
+        commands.entity(entity).despawn_recursive();
     }
-
-    if let Ok(player) = player_query.get_single() {
-        commands.entity(player).despawn_recursive();
-    }
-
 }
 
 

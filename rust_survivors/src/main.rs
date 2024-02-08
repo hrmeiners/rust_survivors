@@ -6,6 +6,7 @@ mod enemy;
 mod player;
 mod main_menu;
 mod game_over;
+mod ui;
 
 
 #[derive(Debug, Hash, States, Default, Eq, PartialEq, Clone)]
@@ -46,6 +47,7 @@ fn main() {
         .add_plugins(RapierDebugRenderPlugin::default())
 
         .add_plugins(main_menu::MainMenuPlugin)
+        .add_plugins(ui::UIPlugin)
         .add_plugins(game_over::GameOverPlugin)
         .add_plugins(enemy::EnemyPlugin)
         .add_plugins(player::PlayerPlugin)

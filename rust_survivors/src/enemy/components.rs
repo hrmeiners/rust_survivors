@@ -8,3 +8,6 @@ pub struct Enemy;
 pub struct ExpGem {
     pub value: f32,
 }
+
+#[derive(Component)]
+pub struct Pickup;
