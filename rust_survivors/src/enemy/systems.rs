@@ -8,7 +8,53 @@ use super::resources::*;
 use crate::player::components::{Player, Health};
 
 
-pub fn spawn_enemies(
+pub enum EnemyType {
+    Slime,
+}
+
+
+pub fn spawn_enemy(
+    enemy_type: EnemyType,
+    enemy_translation: Vec3,
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+) {
+    let enemy = match enemy_type {
+        EnemyType::Slime => {
+            commands.spawn((
+                SpriteBundle {
+                    transform: Transform {
+                        translation: enemy_translation,
+                        scale: Vec3::new(0.1, 0.1, 0.1),
+                        ..Default::default()
+                    },
+                    texture: asset_server.load("slime.png"),
+                    ..default()
+                },
+                Health {
+                    max_hp: 10.0,
+                    current_hp: 10.0,
+                    regen: 0.0,
+                },
+            )).id()
+        },
+    };
+
+    // common components
+    commands.entity(enemy)
+        .insert(Enemy)                              // marker components
+        .insert((                                   // physics components
+            Collider::cuboid(80.0, 80.0),
+            ActiveEvents::COLLISION_EVENTS,
+            CollisionGroups::new(
+                Group::from_bits(0b1000).unwrap(),  // membership: enemy
+                Group::from_bits(0b0101).unwrap()   // filters: player, wall
+            )
+    ));
+}
+
+
+pub fn spawn_initial_enemies(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
@@ -19,28 +65,7 @@ pub fn spawn_enemies(
         let random_x = random::<f32>() * (window.width() / 2.0) + 200.0;
         let random_y = random::<f32>() * (window.height() / 2.0) + 200.0;
 
-        commands.spawn((
-            SpriteBundle {
-                transform:  Transform {
-                                translation: Vec3::new(random_x, random_y, 0.0),
-                                scale: Vec3::new(0.1, 0.1, 0.1),
-                                ..default()
-                            },
-                texture: asset_server.load("slime.png"),
-                ..default()
-            },
-            Enemy,
-            Health {
-                max_hp: 10.0,
-                current_hp: 10.0,
-                regen: 0.0,
-            },
-            Collider::cuboid(80.0, 80.0),
-            CollisionGroups {
-                memberships: Group::GROUP_2,    //enemy colliders will be group 2
-                filters: Group::GROUP_1,        //player will be group 1
-            },
-        ));
+        spawn_enemy(EnemyType::Slime, Vec3::new(random_x, random_y, 0.0), &mut commands, &asset_server);
     }
 }
 
@@ -92,34 +117,17 @@ pub fn spawn_enemies_over_time(
         let random_x = random::<f32>() * (window.width() / 2.0) + 200.0;
         let random_y = random::<f32>() * (window.height() / 2.0) + 200.0;
 
-        commands.spawn((
-            SpriteBundle {
-                transform:  Transform {
-                                translation: Vec3::new(random_x, random_y, 0.0),
-                                scale: Vec3::new(0.1, 0.1, 0.1),
-                                ..default()
-                            },
-                texture: asset_server.load("slime.png"),
-                ..default()
-            },
-            Enemy, 
-            Health {
-                max_hp: 10.0,
-                current_hp: 10.0,
-                regen: 0.0,
-            },
-            Collider::cuboid(80.0, 80.0),
-            CollisionGroups {
-                memberships: Group::GROUP_2,    //enemy colliders will be group 2
-                filters: Group::GROUP_1,        //player will be group 1
-            },
-        ));
+        spawn_enemy(EnemyType::Slime, Vec3::new(random_x, random_y, 0.0), &mut commands, &asset_server);
     }
 }
 
 
-//collision detection is not working 100%
-//enemies are still deleting each other --> might be something wrong with the collision groups thing
+
+// COLLISIONS STILL NOT WORKINGGGGGGGGG
+// MADE POST ON THE BEVY DISCORD SERVER ASKING FOR HELP
+// MAYBE SM W COLLISION GROUPS 
+
+
 
 pub fn enemy_check_collisions(
     mut commands: Commands,
@@ -129,9 +137,6 @@ pub fn enemy_check_collisions(
 ) {
     for (enemy, mut health, transform) in &mut enemy_query {
 
-        // MIGHT NEED TO FIX CODE
-        // right now just says that enemies lose health for EVERYTHING they are in contact with
-        // needs to be just player
         for _contact_pair in rapier_context.contacts_with(enemy) {
             health.current_hp -= 1.0;
         }
@@ -141,7 +146,7 @@ pub fn enemy_check_collisions(
 
             // 100% chance to spawn exp gem upon death FOR TESTING
             if random::<f32>() <= 1.0 {
-                spawn_exp_gem(&mut commands, transform, &asset_server);
+                spawn_exp_gem(10, &mut commands, transform, &asset_server);
             }
 
             //despawn enemy
@@ -152,21 +157,35 @@ pub fn enemy_check_collisions(
 
 
 pub fn spawn_exp_gem(
+    exp_value: i32,
     commands: &mut Commands,
     enemy_transform: &Transform,
     asset_server: &Res<AssetServer>,
 ) {
-    //spawn exp gemstone right where the enemy died
-    let _exp_gemstone = commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("exp_gem.png"),
-            transform:  *enemy_transform,
-            ..default()
+    let exp_gem = match exp_value {
+        10 => { 
+            commands.spawn((
+                SpriteBundle {
+                    texture: asset_server.load("exp_gem.png"),
+                    transform:  *enemy_transform,
+                    ..default()
+                },
+                Collider::cuboid(10.0, 10.0),
+                ActiveEvents::COLLISION_EVENTS,
+                ExpGem { value: exp_value },
+            )).id()
         },
-        Collider::cuboid(10.0, 10.0),
-        ActiveEvents::COLLISION_EVENTS,
-        ExpGem { value: 10.0 },
-        Pickup,
-    ));
 
+        _ => panic!("wrong exp value"),
+    };
+
+    commands.entity(exp_gem)                           // marker components
+        .insert((                                   // physics components
+            Collider::cuboid(80.0, 80.0),
+            ActiveEvents::COLLISION_EVENTS,
+            CollisionGroups::new(
+                Group::from_bits(0b0010).unwrap(),  // membership: pickup
+                Group::from_bits(0b0100).unwrap()   // filters: player
+            )
+    ));
 }

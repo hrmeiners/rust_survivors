@@ -6,7 +6,7 @@ pub struct Enemy;
 
 #[derive(Component)]
 pub struct ExpGem {
-    pub value: f32,
+    pub value: i32,
 }
 
 #[derive(Component)]
