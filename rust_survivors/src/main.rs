@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::app::AppExit;
 use bevy_rapier2d::prelude::*;
 
 mod enemy;
@@ -21,10 +20,10 @@ pub enum GameState {
 
 pub fn exit_game(
     keyboard_input: Res<Input<KeyCode>>,
-    mut app_exit_event_writer: EventWriter<AppExit>,
+    mut commands: Commands,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
-        app_exit_event_writer.send(AppExit);
+        commands.insert_resource(NextState::<GameState>(Some(GameState::GameOver)));
     }
 }
 

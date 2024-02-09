@@ -3,8 +3,6 @@ use bevy::prelude::*;
 use super::events::GameOver;
 use super::components::*;
 use crate::GameState;
-use crate::enemy::components::*;
-use crate::player::components::*;
 
 
 pub fn handle_game_over(

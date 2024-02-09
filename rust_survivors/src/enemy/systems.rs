@@ -122,27 +122,24 @@ pub fn spawn_enemies_over_time(
 //enemies are still deleting each other --> might be something wrong with the collision groups thing
 
 pub fn enemy_check_collisions(
-    mut enemy_query: Query<(Entity, &mut Health), With<Enemy>>,
+    mut commands: Commands,
+    mut enemy_query: Query<(Entity, &mut Health, &Transform), With<Enemy>>,
     rapier_context: Res<RapierContext>,
+    asset_server: Res<AssetServer>,
 ) {
-    //for every enemy, look at all colliders in contact with that enemy
-    //calculate damage/health
-    for (enemy, mut health) in &mut enemy_query {
+    for (enemy, mut health, transform) in &mut enemy_query {
+
+        // MIGHT NEED TO FIX CODE
+        // right now just says that enemies lose health for EVERYTHING they are in contact with
+        // needs to be just player
         for _contact_pair in rapier_context.contacts_with(enemy) {
             health.current_hp -= 1.0;
         }
-    }
-}
 
-
-pub fn enemy_death(
-    mut commands: Commands,
-    enemy_query: Query<(Entity, &Health, &Transform), With<Enemy>>,
-    asset_server: Res<AssetServer>,
-) {
-    for (enemy, health, transform) in &enemy_query {
+        //enemy death code
         if health.current_hp <= 0.0 {
-            
+
+            // 100% chance to spawn exp gem upon death FOR TESTING
             if random::<f32>() <= 1.0 {
                 spawn_exp_gem(&mut commands, transform, &asset_server);
             }
@@ -160,7 +157,7 @@ pub fn spawn_exp_gem(
     asset_server: &Res<AssetServer>,
 ) {
     //spawn exp gemstone right where the enemy died
-    let exp_gemstone = commands.spawn((
+    let _exp_gemstone = commands.spawn((
         SpriteBundle {
             texture: asset_server.load("exp_gem.png"),
             transform:  *enemy_transform,
